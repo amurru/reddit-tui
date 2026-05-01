@@ -22,7 +22,11 @@ type Viewer interface {
 }
 
 // func Place(fg, bg string, xPos, yPos lipgloss.Position) string {
-func PlaceModal(foreground, background Viewer, xPos, yPos lipgloss.Position, modalStyle lipgloss.Style) string {
+func PlaceModal(
+	foreground, background Viewer,
+	xPos, yPos lipgloss.Position,
+	modalStyle lipgloss.Style,
+) string {
 	var (
 		x int
 		y int
@@ -55,7 +59,7 @@ func PlaceModal(foreground, background Viewer, xPos, yPos lipgloss.Position, mod
 		// 45% looks more pleasing than 50% for center aligned modals
 		y = int((float64(bgHeight) * 0.45)) - (fgHeight / 2) - 1
 	case lipgloss.Bottom:
-		x = bgHeight - fgHeight
+		y = bgHeight - fgHeight
 	}
 
 	return Place(x, y, fg, bg, false)
