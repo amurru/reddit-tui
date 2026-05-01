@@ -1,6 +1,7 @@
 name: Build reddittui
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
