@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reddittui/client"
+	"reddittui/client/images"
 	"reddittui/components/comments"
 	"reddittui/components/messages"
 	"reddittui/components/modal"
@@ -45,7 +46,7 @@ func NewRedditTui(configuration config.Config, subreddit, post string) RedditTui
 
 	homePage := posts.NewPostsPage(redditClient, true)
 	subredditPage := posts.NewPostsPage(redditClient, false)
-	commentsPage := comments.NewCommentsPage(redditClient)
+	commentsPage := comments.NewCommentsPage(redditClient, configuration)
 
 	modalManager := modal.NewModalManager()
 
@@ -117,6 +118,11 @@ func (r RedditTui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return r, cmd
 
 	case messages.ExitModalMsg:
+		if r.modalManager.IsImagePreviewOpen() {
+			if err := images.ClearTerminalImages(); err != nil {
+				slog.Warn("Could not clear terminal image preview", "error", err)
+			}
+		}
 		r.popup = false
 		r.focusActivePage()
 		cmd = r.modalManager.Blur()
@@ -158,6 +164,14 @@ func (r RedditTui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		r.loadingPage = CommentsPage
 
 		cmd = r.modalManager.SetLoading("loading comments...")
+		cmds = append(cmds, cmd)
+
+	case messages.LoadImagePreviewMsg:
+		if err := images.ClearTerminalImages(); err != nil {
+			slog.Warn("Could not clear previous image preview", "error", err)
+		}
+		r.focusModal()
+		cmd = r.modalManager.SetLoading("loading image preview...")
 		cmds = append(cmds, cmd)
 
 	case messages.OpenUrlMsg:
