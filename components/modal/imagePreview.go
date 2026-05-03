@@ -32,7 +32,7 @@ func (m ImagePreviewModal) Update(msg tea.Msg) (ImagePreviewModal, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc", "q", "enter":
+		case "esc", "q", "enter", "h", "backspace":
 			return m, messages.ExitModal
 		}
 	}
