@@ -141,7 +141,13 @@ func (m ModalManager) View(background Viewer) string {
 	case showingError:
 		return PlaceModal(m.errorModal, background, lipgloss.Center, lipgloss.Center, m.style)
 	case showingImagePreview:
-		return PlaceModal(m.imagePreview, background, lipgloss.Center, lipgloss.Center, m.imageStyle)
+		return PlaceModal(
+			m.imagePreview,
+			background,
+			lipgloss.Center,
+			lipgloss.Center,
+			m.imageStyle,
+		)
 	default:
 		// This sometimes happens when loading completes before the loading modal finishes rendering
 		return ""

@@ -1,6 +1,8 @@
 package images
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestParseProtocol(t *testing.T) {
 	tests := []struct {

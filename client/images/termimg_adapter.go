@@ -40,7 +40,7 @@ func (r TermimgRenderer) Render(img image.Image, opts RenderOptions) (string, er
 		return "", err
 	}
 
-	renderer := termimg.New(img).Protocol(protocol).Scale(termimg.ScaleFill)
+	renderer := termimg.New(img).Protocol(protocol).Scale(termimg.ScaleFit).UseUnicode(true)
 	if opts.Width > 0 {
 		renderer = renderer.Width(opts.Width)
 	}

@@ -7,6 +7,7 @@ import (
 	"reddittui/client"
 	"reddittui/client/images"
 	"reddittui/components/messages"
+	"reddittui/components/modal"
 	"reddittui/components/styles"
 	"reddittui/config"
 	"reddittui/model"
@@ -19,7 +20,7 @@ var commentsErrorText = "Could not load comments. Please try again in a few mome
 
 type CommentsPage struct {
 	redditClient        client.RedditClient
-	imagePreviewClient  images.PreviewClient
+	imagePreviewClient  *images.PreviewClient
 	imagePreviewOptions config.ImagePreviewConfig
 	header              CommentsHeader
 	pager               CommentsViewport
@@ -35,11 +36,14 @@ func NewCommentsPage(redditClient client.RedditClient, configuration config.Conf
 	vp := NewCommentsViewport()
 
 	timeoutSeconds := max(configuration.Core.ClientTimeout, configuration.Client.TimeoutSeconds)
-	imagePreviewClient := images.NewPreviewClient(timeoutSeconds, configuration.ImagePreview.PreferredProtocol)
+	imagePreviewClient := images.NewPreviewClient(
+		timeoutSeconds,
+		configuration.ImagePreview.PreferredProtocol,
+	)
 
 	return CommentsPage{
 		redditClient:        redditClient,
-		imagePreviewClient:  imagePreviewClient,
+		imagePreviewClient:  &imagePreviewClient,
 		imagePreviewOptions: configuration.ImagePreview,
 		header:              header,
 		pager:               vp,
@@ -131,6 +135,30 @@ func (c *CommentsPage) Blur() {
 	c.focus = false
 }
 
+func (c *CommentsPage) ReRenderImagePreview() tea.Cmd {
+	return func() tea.Msg {
+		maxWidth, maxHeight := modal.ImagePreviewContentSize(c.w, c.h)
+		if c.imagePreviewOptions.MaxWidthCells > 0 {
+			maxWidth = min(c.imagePreviewOptions.MaxWidthCells, maxWidth)
+		}
+		if c.imagePreviewOptions.MaxHeightCells > 0 {
+			maxHeight = min(c.imagePreviewOptions.MaxHeightCells, maxHeight)
+		}
+
+		imagePreview, err := c.imagePreviewClient.ReRender(maxWidth, maxHeight)
+		if err != nil {
+			slog.Error("Could not re-render image preview", "error", err)
+			return nil
+		}
+
+		return messages.UpdateImagePreviewMsg(imagePreview)
+	}
+}
+
+func (c *CommentsPage) ClearImageCache() {
+	c.imagePreviewClient.ClearCache()
+}
+
 func (c *CommentsPage) resizeComponents() {
 	var (
 		w            = c.containerStyle.GetWidth() - c.containerStyle.GetHorizontalFrameSize()
@@ -166,8 +194,7 @@ func (c *CommentsPage) updateComments(comments model.Comments) {
 
 func (c *CommentsPage) loadImagePreview(url string) tea.Cmd {
 	return func() tea.Msg {
-		maxWidth := int(float64(c.w) * 0.98)
-		maxHeight := int(float64(c.h) * 0.96)
+		maxWidth, maxHeight := modal.ImagePreviewContentSize(c.w, c.h)
 		if c.imagePreviewOptions.MaxWidthCells > 0 {
 			maxWidth = min(c.imagePreviewOptions.MaxWidthCells, maxWidth)
 		}

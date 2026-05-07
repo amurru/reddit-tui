@@ -19,10 +19,14 @@ import (
 const defaultMaxImageSizeBytes = 20 << 20 // 20 MB
 
 type PreviewClient struct {
-	httpClient *http.Client
-	renderer   Renderer
-	maxBytes   int64
-	protocol   RenderProtocol
+	httpClient    *http.Client
+	renderer      Renderer
+	maxBytes      int64
+	protocol      RenderProtocol
+	cachedImage   image.Image
+	cachedRender  string
+	cachedWidth   int
+	cachedHeight  int
 }
 
 func NewPreviewClient(timeoutSeconds int, protocol string) PreviewClient {
@@ -36,7 +40,7 @@ func NewPreviewClient(timeoutSeconds int, protocol string) PreviewClient {
 	}
 }
 
-func (p PreviewClient) RenderFromURL(imageURL string, width, height int) (string, error) {
+func (p *PreviewClient) RenderFromURL(imageURL string, width, height int) (string, error) {
 	parsed, err := url.Parse(imageURL)
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", ErrUnsupportedImageURL, imageURL)
@@ -81,16 +85,40 @@ func (p PreviewClient) RenderFromURL(imageURL string, width, height int) (string
 		return "", fmt.Errorf("%w: %v", ErrCannotDecodeImage, err)
 	}
 
-	rendered, err := p.renderer.Render(img, RenderOptions{
+	p.cachedImage = img
+	return p.render(img, width, height)
+}
+
+func (p *PreviewClient) ReRender(width, height int) (string, error) {
+	if p.cachedImage == nil {
+		return "", fmt.Errorf("no cached image to re-render")
+	}
+	if p.cachedRender != "" && p.cachedWidth == width && p.cachedHeight == height {
+		return p.cachedRender, nil
+	}
+	rendered, err := p.render(p.cachedImage, width, height)
+	if err != nil {
+		return "", err
+	}
+	p.cachedRender = rendered
+	p.cachedWidth = width
+	p.cachedHeight = height
+	return rendered, nil
+}
+
+func (p *PreviewClient) render(img image.Image, width, height int) (string, error) {
+	return p.renderer.Render(img, RenderOptions{
 		Width:    width,
 		Height:   height,
 		Protocol: p.protocol,
 	})
-	if err != nil {
-		return "", err
-	}
+}
 
-	return rendered, nil
+func (p *PreviewClient) ClearCache() {
+	p.cachedImage = nil
+	p.cachedRender = ""
+	p.cachedWidth = 0
+	p.cachedHeight = 0
 }
 
 func looksLikeImagePath(imagePath string) bool {

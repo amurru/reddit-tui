@@ -120,7 +120,7 @@ func Place(
 		pos := 0
 		if x > 0 {
 			left := truncate.String(bgLine, uint(x))
-			pos = ansi.PrintableRuneWidth(left)
+			pos = lipgloss.Width(left)
 			b.WriteString(left)
 			if pos < x {
 				b.WriteString(ws.render(x - pos))
@@ -130,11 +130,11 @@ func Place(
 
 		fgLine := fgLines[i-y]
 		b.WriteString(fgLine)
-		pos += ansi.PrintableRuneWidth(fgLine)
+		pos += lipgloss.Width(fgLine)
 
 		right := cutLeft(bgLine, pos)
-		bgWidth := ansi.PrintableRuneWidth(bgLine)
-		rightWidth := ansi.PrintableRuneWidth(right)
+		bgWidth := lipgloss.Width(bgLine)
+		rightWidth := lipgloss.Width(right)
 		if rightWidth <= bgWidth-pos {
 			b.WriteString(ws.render(bgWidth - rightWidth - pos))
 		}
@@ -151,7 +151,7 @@ func getLines(s string) (lines []string, widest int) {
 	lines = strings.Split(s, "\n")
 
 	for _, l := range lines {
-		w := ansi.PrintableRuneWidth(l)
+		w := lipgloss.Width(l)
 		if widest < w {
 			widest = w
 		}
